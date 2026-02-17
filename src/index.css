@@ -1,0 +1,224 @@
+@import "tailwindcss";
+
+/* ── Custom Design Tokens ───────────────────────────── */
+:root {
+  --color-bg-start: #0a0a1a;
+  --color-bg-mid: #0d1125;
+  --color-bg-end: #060612;
+  --color-glass: rgba(255, 255, 255, 0.04);
+  --color-glass-border: rgba(255, 255, 255, 0.08);
+  --color-glass-hover: rgba(255, 255, 255, 0.07);
+  --color-cyan: #22d3ee;
+  --color-magenta: #e879f9;
+  --color-cyan-glow: rgba(34, 211, 238, 0.35);
+  --color-magenta-glow: rgba(232, 121, 249, 0.35);
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ── Base Layer ─────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-family);
+  background: linear-gradient(145deg,
+      var(--color-bg-start) 0%,
+      var(--color-bg-mid) 50%,
+      var(--color-bg-end) 100%);
+  color: var(--color-text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Glass Card ─────────────────────────────────────── */
+.glass {
+  background: var(--color-glass);
+  border: 1px solid var(--color-glass-border);
+  backdrop-filter: blur(24px) saturate(1.6);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  border-radius: 1.25rem;
+}
+
+.glass-sm {
+  background: var(--color-glass);
+  border: 1px solid var(--color-glass-border);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  border-radius: 0.75rem;
+}
+
+/* ── Glow Buttons ───────────────────────────────────── */
+.btn-glow {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.75rem;
+  font-family: var(--font-family);
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #fff;
+  border: none;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(135deg, var(--color-cyan), #6366f1);
+}
+
+.btn-glow::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, var(--color-cyan), #6366f1);
+  opacity: 0;
+  filter: blur(16px);
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.btn-glow:hover::before {
+  opacity: 0.6;
+}
+
+.btn-glow:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 32px rgba(34, 211, 238, 0.25);
+}
+
+.btn-glow:active {
+  transform: translateY(0);
+}
+
+/* ── Split Button (dangerous / important) ───────────── */
+.btn-split {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.875rem 2rem;
+  font-family: var(--font-family);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  color: #fff;
+  border: 2px solid transparent;
+  border-radius: 1rem;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
+  background-size: 200% 200%;
+  animation: gradientShift 4s ease infinite;
+}
+
+@keyframes gradientShift {
+
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.btn-split::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
+  opacity: 0;
+  filter: blur(20px);
+  transition: opacity 0.35s ease;
+  z-index: -1;
+}
+
+.btn-split:hover::before {
+  opacity: 0.7;
+}
+
+.btn-split:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow:
+    0 0 24px rgba(168, 85, 247, 0.35),
+    0 0 48px rgba(99, 102, 241, 0.15);
+}
+
+/* ── Life A / B Borders ─────────────────────────────── */
+.life-a {
+  border-color: var(--color-cyan) !important;
+  box-shadow: 0 0 24px var(--color-cyan-glow), inset 0 0 24px rgba(34, 211, 238, 0.04);
+}
+
+.life-b {
+  border-color: var(--color-magenta) !important;
+  box-shadow: 0 0 24px var(--color-magenta-glow), inset 0 0 24px rgba(232, 121, 249, 0.04);
+}
+
+/* ── Board Reflection  ──────────────────────────────── */
+.board-reflection {
+  position: relative;
+  z-index: 0;
+}
+
+.board-reflection::after {
+  content: '';
+  position: absolute;
+  bottom: -60%;
+  left: 5%;
+  right: 5%;
+  height: 50%;
+  background: inherit;
+  transform: scaleY(-1);
+  filter: blur(12px) brightness(0.3);
+  opacity: 0.18;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.4), transparent 80%);
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.4), transparent 80%);
+  pointer-events: none;
+  z-index: -1;
+  border-radius: 0 0 1.25rem 1.25rem;
+}
+
+/* ── Scrollbar ──────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* ── Chessboard Overrides ───────────────────────────── */
+.chess-board-wrapper {
+  position: relative;
+  z-index: 1;
+  border-radius: 0.75rem;
+}
