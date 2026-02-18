@@ -35,7 +35,11 @@ export default function GamePanel({ id, label, colorClass, fen: initialFen, onSp
 
     /* ── Trigger AI response after White moves ── */
     const triggerAI = useCallback(async (fen) => {
-        if (!engineReady) return;
+        console.log('[TwoLives] triggerAI called | engineReady:', engineReady, '| fen:', fen);
+        if (!engineReady) {
+            console.warn('[TwoLives] triggerAI aborted — engine not ready');
+            return;
+        }
 
         setIsThinking(true);
 
@@ -74,20 +78,29 @@ export default function GamePanel({ id, label, colorClass, fen: initialFen, onSp
 
     /* ── Shared move executor (for human White moves) ── */
     const tryMove = useCallback((from, to) => {
+        console.log('[TwoLives] tryMove called:', from, '→', to, '| turn:', game.turn());
         const gameCopy = new Chess(game.fen());
 
         // Only allow White to move
-        if (gameCopy.turn() !== 'w') return false;
+        if (gameCopy.turn() !== 'w') {
+            console.log('[TwoLives] tryMove rejected — not White\'s turn');
+            return false;
+        }
 
         const move = gameCopy.move({ from, to, promotion: 'q' });
-        if (move === null) return false;
+        if (move === null) {
+            console.log('[TwoLives] tryMove rejected — illegal move');
+            return false;
+        }
 
+        console.log('[TwoLives] White played:', move.san);
         setGame(gameCopy);
         setMoveHistory(prev => [...prev, move.san]);
         setSelectedSquare(null);
 
         // After White moves, trigger AI for Black
         if (!gameCopy.isGameOver()) {
+            console.log('[TwoLives] Game not over, triggering AI for Black…');
             triggerAI(gameCopy.fen());
         }
 
@@ -96,6 +109,7 @@ export default function GamePanel({ id, label, colorClass, fen: initialFen, onSp
 
     /* ── react-chessboard v5: onPieceDrop ── */
     const handlePieceDrop = useCallback(({ sourceSquare, targetSquare }) => {
+        console.log('[TwoLives] onPieceDrop:', sourceSquare, '→', targetSquare, '| isThinking:', isThinking);
         if (!targetSquare || isThinking) return false;
         return tryMove(sourceSquare, targetSquare);
     }, [tryMove, isThinking]);
