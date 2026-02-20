@@ -4,7 +4,6 @@ import HeroSection from './components/HeroSection';
 import GamePanel from './components/GamePanel';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import Footer from './components/Footer';
-import AdSlot from './components/AdSlot';
 import { ArrowLeft, Sparkles } from 'lucide-react';
 
 export default function App() {
@@ -105,8 +104,8 @@ export default function App() {
               <LayoutGroup>
                 <div
                   className={`max-w-7xl mx-auto ${isSplit
-                      ? 'split-boards'
-                      : 'grid grid-cols-1 max-w-xl mx-auto gap-6'
+                    ? 'split-boards'
+                    : 'grid grid-cols-1 max-w-xl mx-auto gap-6'
                     }`}
                 >
                   <GamePanel
@@ -138,11 +137,6 @@ export default function App() {
                   </AnimatePresence>
                 </div>
               </LayoutGroup>
-
-              {/* Game-page ad */}
-              <div className="max-w-7xl mx-auto mt-8">
-                <AdSlot />
-              </div>
             </motion.div>
           )}
         </AnimatePresence>

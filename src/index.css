@@ -223,31 +223,46 @@ body {
   border-radius: 0.75rem;
 }
 
-/* ── Split Boards — Landscape Mobile ───────────────── */
+/* ── Split Boards — Responsive ─────────────────────── */
 .split-boards {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 1.5rem;
+  width: 100%;
 }
 
 @media (orientation: landscape) and (max-width: 1024px) {
   .split-boards {
     flex-direction: row;
+    align-items: flex-start;
+    gap: 1rem;
   }
 
   .split-boards>* {
     flex: 1 1 0;
     min-width: 0;
+    max-width: 50%;
   }
 }
 
 @media (min-width: 1024px) {
   .split-boards {
     flex-direction: row;
+    align-items: flex-start;
+    gap: 2rem;
   }
 
   .split-boards>* {
     flex: 1 1 0;
     min-width: 0;
+    max-width: 45vw;
+  }
+}
+
+@media (min-width: 1280px) {
+  .split-boards {
+    gap: 3rem;
   }
 }
