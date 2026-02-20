@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { AnimatePresence, motion, LayoutGroup } from 'framer-motion';
+import { Analytics } from '@vercel/analytics/react';
 import HeroSection from './components/HeroSection';
 import GamePanel from './components/GamePanel';
 import PrivacyPolicy from './components/PrivacyPolicy';
@@ -144,6 +145,7 @@ export default function App() {
 
       {/* Footer — visible on all views */}
       <Footer onPrivacy={handlePrivacy} />
+      <Analytics />
     </div>
   );
 }
