@@ -37,34 +37,20 @@ export default function HeroSection({ onStart }) {
                 Chess Reimagined
             </motion.div>
 
-            {/* Headline */}
-            <motion.h1
+            {/* Hero Key Art */}
+            <motion.img
+                src="/hero-queen.png"
+                alt="Two Lives Chess - Queen at the crossroads"
                 custom={0}
                 initial="hidden"
                 animate="visible"
                 variants={fadeUp}
-                className="text-5xl sm:text-6xl md:text-7xl font-black leading-[1.05] tracking-tight max-w-4xl"
-            >
-                One Game.{' '}
-                <span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-fuchsia-400 bg-clip-text text-transparent">
-                    Two Lives.
-                </span>
-            </motion.h1>
-
-            {/* Subheadline */}
-            <motion.p
-                custom={1}
-                initial="hidden"
-                animate="visible"
-                variants={fadeUp}
-                className="mt-6 text-lg sm:text-xl text-white/50 max-w-2xl leading-relaxed"
-            >
-                Don't just guess the outcome.{' '}
-                <span className="text-white/80 font-medium">Play both timelines instantly.</span>
-            </motion.p>
+                className="w-full max-w-4xl md:w-4/5 mx-auto drop-shadow-2xl"
+                draggable={false}
+            />
 
             {/* CTA */}
-            <motion.div custom={2} initial="hidden" animate="visible" variants={fadeUp} className="mt-10">
+            <motion.div custom={1} initial="hidden" animate="visible" variants={fadeUp} className="mt-10">
                 <button onClick={onStart} className="btn-glow text-base px-8 py-3.5">
                     Start Playing
                 </button>
