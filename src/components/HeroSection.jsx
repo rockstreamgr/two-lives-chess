@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { GitBranch, Layers, Zap } from 'lucide-react';
+import AdSlot from './AdSlot';
 
 const features = [
     { icon: GitBranch, title: 'Real-time Branching', desc: 'Split any position into two timelines and compare outcomes side by side.' },
@@ -88,6 +89,9 @@ export default function HeroSection({ onStart }) {
                     </motion.div>
                 ))}
             </div>
+
+            {/* Ad placement */}
+            <AdSlot className="mt-16" />
         </section>
     );
 }

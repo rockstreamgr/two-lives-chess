@@ -4,6 +4,7 @@ import { Chess } from 'chess.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RotateCcw, ChevronLeft, ChevronRight, SkipBack, Loader2 } from 'lucide-react';
 import useStockfish from '../hooks/useStockfish';
+import AdSlot from './AdSlot';
 
 export default function GamePanel({ id, label, colorClass, fen: initialFen, onSplit }) {
     const [game, setGame] = useState(() => {
@@ -298,6 +299,9 @@ export default function GamePanel({ id, label, colorClass, fen: initialFen, onSp
                     </div>
                 </div>
             )}
+
+            {/* Ad placement */}
+            <AdSlot className="mt-2" />
         </motion.div>
     );
 }
