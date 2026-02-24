@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RotateCcw, ChevronLeft, ChevronRight, SkipBack, Loader2 } from 'lucide-react';
+import { RotateCcw, ChevronLeft, ChevronRight, SkipBack, Loader2, Camera } from 'lucide-react';
 import useStockfish from '../hooks/useStockfish';
 import AdSlot from './AdSlot';
 
@@ -16,6 +16,10 @@ export default function GamePanel({ id, label, colorClass, fen: initialFen, onSp
     const [boardOrientation, setBoardOrientation] = useState('white');
     const [selectedSquare, setSelectedSquare] = useState(null);
     const [isThinking, setIsThinking] = useState(false);
+    const [isScanning, setIsScanning] = useState(false);
+    const [scanError, setScanError] = useState(null);
+    const fileInputRef = useRef(null);
+    const toastTimerRef = useRef(null);
 
     const { getBestMove, ready: engineReady } = useStockfish();
     const thinkingTimeoutRef = useRef(null);
@@ -164,10 +168,86 @@ export default function GamePanel({ id, label, colorClass, fen: initialFen, onSp
         setBoardOrientation(prev => prev === 'white' ? 'black' : 'white');
     }, []);
 
+    /* ── Scan Real Board: Gemini Vision handler ── */
+    const showScanError = useCallback((msg) => {
+        setScanError(msg);
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+        toastTimerRef.current = setTimeout(() => setScanError(null), 4000);
+    }, []);
+
+    const handleImageUpload = useCallback(async (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setIsScanning(true);
+        setScanError(null);
+        event.target.value = '';  // allow re-selecting same file
+
+        try {
+            // Convert image to base64
+            const base64 = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+
+            const mimeType = file.type || 'image/jpeg';
+
+            // Call Gemini 1.5 Flash
+            const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+            if (!apiKey) throw new Error('Missing VITE_GEMINI_API_KEY');
+
+            const res = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [
+                                { text: 'Analyze this photo of a chessboard. Identify the position of all pieces. Return ONLY the FEN string representing this board state. Do not include any text, explanations, or markdown formatting. Just the FEN.' },
+                                { inline_data: { mime_type: mimeType, data: base64 } },
+                            ],
+                        }],
+                    }),
+                }
+            );
+
+            if (!res.ok) {
+                const errBody = await res.text();
+                console.error('[ScanBoard] API error:', res.status, errBody);
+                throw new Error(`API returned ${res.status}`);
+            }
+
+            const data = await res.json();
+            const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+            console.log('[ScanBoard] Gemini raw response:', rawText);
+
+            if (!rawText) throw new Error('Empty response from Gemini');
+
+            // Validate FEN with chess.js
+            const testGame = new Chess();
+            const loaded = testGame.load(rawText);
+            if (!loaded) throw new Error('Invalid FEN returned');
+
+            // Success — update game state
+            setGame(testGame);
+            setMoveHistory([]);
+            setSelectedSquare(null);
+        } catch (err) {
+            console.error('[ScanBoard] Error:', err);
+            showScanError('Could not recognize the board. Please try a clearer photo.');
+        } finally {
+            setIsScanning(false);
+        }
+    }, [showScanError]);
+
     /* ── Cleanup pending timeouts ── */
     useEffect(() => {
         return () => {
             if (thinkingTimeoutRef.current) clearTimeout(thinkingTimeoutRef.current);
+            if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
         };
     }, []);
 
@@ -246,42 +326,90 @@ export default function GamePanel({ id, label, colorClass, fen: initialFen, onSp
             </div>
 
             {/* Board */}
-            <div className={`board-reflection chess-board-wrapper w-full max-w-[480px] aspect-square transition-opacity ${isThinking ? 'opacity-80' : ''}`}>
-                <Chessboard options={boardOptions} />
+            <div className="relative w-full max-w-[480px] aspect-square">
+                <div className={`board-reflection chess-board-wrapper w-full h-full transition-all duration-300 ${isThinking ? 'opacity-80' : ''} ${isScanning ? 'blur-sm scale-[0.98]' : ''}`}>
+                    <Chessboard options={boardOptions} />
+                </div>
+                <AnimatePresence>
+                    {isScanning && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="absolute inset-0 z-10 rounded-xl flex flex-col items-center justify-center bg-black/40 backdrop-blur-md border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+                        >
+                            <Loader2 size={36} className="animate-spin text-cyan-400 mb-3" />
+                            <span className="text-sm font-semibold text-white/90 tracking-wide">
+                                AI is analyzing the board…
+                            </span>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
 
             {/* Controls */}
-            <div className="flex items-center gap-2">
-                <button
-                    onClick={resetGame}
-                    disabled={isThinking}
-                    className="glass-sm p-2.5 text-white/60 hover:text-white hover:bg-white/10 transition-colors rounded-lg disabled:opacity-30 disabled:cursor-not-allowed"
-                    title="Reset"
-                >
-                    <SkipBack size={16} />
-                </button>
-                <button
-                    onClick={undoMove}
-                    disabled={moveHistory.length < 2 || isThinking}
-                    className="glass-sm p-2.5 text-white/60 hover:text-white hover:bg-white/10 transition-colors rounded-lg disabled:opacity-30 disabled:cursor-not-allowed"
-                    title="Undo (undoes your move + AI response)"
-                >
-                    <RotateCcw size={16} />
-                </button>
-                <button
-                    onClick={flipBoard}
-                    className="glass-sm p-2.5 text-white/60 hover:text-white hover:bg-white/10 transition-colors rounded-lg"
-                    title="Flip Board"
-                >
-                    <ChevronLeft size={16} className="inline" />
-                    <ChevronRight size={16} className="inline -ml-1" />
-                </button>
-
-                {onSplit && !isGameOver && (
-                    <button onClick={() => onSplit(currentFen)} disabled={isThinking} className="btn-split ml-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                        ✦ Split Life
+            <div className="flex flex-col items-center gap-3 w-full max-w-[480px]">
+                {/* Utility buttons row */}
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={resetGame}
+                        disabled={isThinking || isScanning}
+                        className="glass-sm p-2.5 text-white/60 hover:text-white hover:bg-white/10 transition-colors rounded-lg disabled:opacity-30 disabled:cursor-not-allowed"
+                        title="Reset"
+                    >
+                        <SkipBack size={16} />
                     </button>
-                )}
+                    <button
+                        onClick={undoMove}
+                        disabled={moveHistory.length < 2 || isThinking || isScanning}
+                        className="glass-sm p-2.5 text-white/60 hover:text-white hover:bg-white/10 transition-colors rounded-lg disabled:opacity-30 disabled:cursor-not-allowed"
+                        title="Undo (undoes your move + AI response)"
+                    >
+                        <RotateCcw size={16} />
+                    </button>
+                    <button
+                        onClick={flipBoard}
+                        className="glass-sm p-2.5 text-white/60 hover:text-white hover:bg-white/10 transition-colors rounded-lg"
+                        title="Flip Board"
+                    >
+                        <ChevronLeft size={16} className="inline" />
+                        <ChevronRight size={16} className="inline -ml-1" />
+                    </button>
+
+                    {onSplit && !isGameOver && (
+                        <button onClick={() => onSplit(currentFen)} disabled={isThinking || isScanning} className="btn-split ml-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                            ✦ Split Life
+                        </button>
+                    )}
+                </div>
+
+                {/* Scan Board — primary action */}
+                <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    ref={fileInputRef}
+                    onChange={handleImageUpload}
+                />
+                <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isThinking || isScanning}
+                    className="group flex items-center justify-center gap-2 w-full min-h-[44px] px-5 py-2.5
+                               rounded-xl border border-cyan-400/30 bg-white/[0.04] backdrop-blur-sm
+                               text-white/80 text-sm font-semibold tracking-wide
+                               shadow-[0_0_12px_rgba(34,211,238,0.08)]
+                               hover:border-cyan-400/60 hover:bg-white/[0.08] hover:text-cyan-300
+                               hover:shadow-[0_0_20px_rgba(34,211,238,0.15)]
+                               active:scale-[0.97]
+                               transition-all duration-200 ease-out
+                               disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    title="Scan a real chessboard with your camera"
+                >
+                    <Camera size={18} className="opacity-70 group-hover:opacity-100 transition-opacity" />
+                    <span>Scan Board</span>
+                </button>
             </div>
 
             {/* Move History */}
@@ -302,6 +430,23 @@ export default function GamePanel({ id, label, colorClass, fen: initialFen, onSp
 
             {/* Ad placement */}
             <AdSlot className="mt-2" />
+
+            {/* Scan error toast */}
+            <AnimatePresence>
+                {scanError && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 20 }}
+                        transition={{ duration: 0.25 }}
+                        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 max-w-sm w-[calc(100%-2rem)]
+                                   px-4 py-3 rounded-xl bg-red-500/90 backdrop-blur-md border border-red-400/30
+                                   text-white text-sm font-medium text-center shadow-[0_8px_24px_rgba(239,68,68,0.3)]"
+                    >
+                        {scanError}
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 }
