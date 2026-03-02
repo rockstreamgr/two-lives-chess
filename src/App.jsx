@@ -4,11 +4,12 @@ import { Analytics } from '@vercel/analytics/react';
 import HeroSection from './components/HeroSection';
 import GamePanel from './components/GamePanel';
 import PrivacyPolicy from './components/PrivacyPolicy';
+import GuideAbout from './components/GuideAbout';
 import Footer from './components/Footer';
 import { ArrowLeft, Sparkles } from 'lucide-react';
 
 export default function App() {
-  const [view, setView] = useState('hero'); // 'hero' | 'game' | 'privacy'
+  const [view, setView] = useState('hero'); // 'hero' | 'game' | 'privacy' | 'guide'
   const [isSplit, setIsSplit] = useState(false);
   const [splitFen, setSplitFen] = useState(null);
   const gameRef = useRef(null);
@@ -38,6 +39,9 @@ export default function App() {
   /* Privacy */
   const handlePrivacy = useCallback(() => setView('privacy'), []);
 
+  /* Guide */
+  const handleGuide = useCallback(() => setView('guide'), []);
+
   return (
     <div className="relative min-h-screen flex flex-col">
       <div className="flex-1">
@@ -63,6 +67,18 @@ export default function App() {
               transition={{ duration: 0.45 }}
             >
               <PrivacyPolicy onBack={handleGoHome} />
+            </motion.div>
+          )}
+
+          {view === 'guide' && (
+            <motion.div
+              key="guide"
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.45 }}
+            >
+              <GuideAbout onBack={handleGoHome} />
             </motion.div>
           )}
 
@@ -144,7 +160,7 @@ export default function App() {
       </div>
 
       {/* Footer — visible on all views */}
-      <Footer onPrivacy={handlePrivacy} />
+      <Footer onPrivacy={handlePrivacy} onGuide={handleGuide} />
       <Analytics />
     </div>
   );
